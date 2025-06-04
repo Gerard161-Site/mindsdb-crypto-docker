@@ -1,0 +1,77 @@
+
+# Docker Compose Override for Development/Testing
+# Use: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+
+version: '3.8'
+
+services:
+  mindsdb:
+    # Override for development
+    environment:
+      - MINDSDB_DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Mount source code for development
+      - ./agents:/opt/mindsdb/agents:ro
+      - ./handlers:/opt/mindsdb/handlers:ro
+    ports:
+      # Expose additional ports for debugging
+      - "47334:47334"
+      - "47335:47335"
+      - "47336:47336"
+      - "47337:47337"
+
+  # Development database with exposed port
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=mindsdb_dev
+    volumes:
+      # Add development data
+      - ./dev-data:/docker-entrypoint-initdb.d
+
+  # Development Redis with exposed port
+  redis:
+    ports:
+      - "6379:6379"
+
+  # Jupyter notebook for development
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./agents:/home/jovyan/work/agents:ro
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=crypto-dev-token
+    networks:
+      - mindsdb_network
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@xplaincrypto.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - mindsdb_network
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    networks:
+      - mindsdb_network
+
+volumes:
+  pgadmin_data:

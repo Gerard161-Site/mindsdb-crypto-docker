@@ -1,0 +1,128 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: mindsdb-crypto
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "mindsdb"
+        - name: POSTGRES_USER
+          value: "mindsdb"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mindsdb-secrets
+              key: postgres-password
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - mindsdb
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - mindsdb
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: init-scripts
+        configMap:
+          name: postgres-init-scripts
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: mindsdb-crypto
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: mindsdb-crypto
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: mindsdb-crypto
+data:
+  01-init.sql: |
+    -- Create MindsDB database and extensions
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+    
+    -- Create tables for crypto data caching
+    CREATE TABLE IF NOT EXISTS crypto_cache (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        symbol VARCHAR(20) NOT NULL,
+        data_type VARCHAR(50) NOT NULL,
+        data JSONB NOT NULL,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        expires_at TIMESTAMP WITH TIME ZONE
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_crypto_cache_symbol ON crypto_cache(symbol);
+    CREATE INDEX IF NOT EXISTS idx_crypto_cache_type ON crypto_cache(data_type);
+    CREATE INDEX IF NOT EXISTS idx_crypto_cache_timestamp ON crypto_cache(timestamp);
+    
+    -- Create table for anomaly detection results
+    CREATE TABLE IF NOT EXISTS anomaly_detections (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        symbol VARCHAR(20) NOT NULL,
+        anomaly_type VARCHAR(100) NOT NULL,
+        severity VARCHAR(20) NOT NULL,
+        data JSONB NOT NULL,
+        detected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_anomaly_symbol ON anomaly_detections(symbol);
+    CREATE INDEX IF NOT EXISTS idx_anomaly_type ON anomaly_detections(anomaly_type);
+    CREATE INDEX IF NOT EXISTS idx_anomaly_detected_at ON anomaly_detections(detected_at);

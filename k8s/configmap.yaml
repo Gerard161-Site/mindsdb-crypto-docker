@@ -1,0 +1,114 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mindsdb-config
+  namespace: mindsdb-crypto
+data:
+  config.json: |
+    {
+      "version": "23.12.4.2",
+      "config_version": "1.4",
+      "storage_dir": "/opt/mindsdb",
+      "log": {
+        "level": {
+          "console": "INFO",
+          "file": "DEBUG"
+        },
+        "file": "/opt/mindsdb/logs/mindsdb.log"
+      },
+      "debug": false,
+      "integrations": {},
+      "api": {
+        "http": {
+          "host": "0.0.0.0",
+          "port": "47334"
+        },
+        "mysql": {
+          "host": "0.0.0.0",
+          "port": "47335"
+        },
+        "mongodb": {
+          "host": "0.0.0.0",
+          "port": "47336"
+        },
+        "mcp": {
+          "host": "0.0.0.0",
+          "port": "47337"
+        }
+      }
+    }
+  
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      
+      - job_name: 'mindsdb'
+        static_configs:
+          - targets: ['mindsdb-service:47334']
+        metrics_path: '/api/metrics'
+      
+      - job_name: 'postgres'
+        static_configs:
+          - targets: ['postgres-service:5432']
+      
+      - job_name: 'redis'
+        static_configs:
+          - targets: ['redis-service:6379']
+
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+        worker_connections 1024;
+    }
+    
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+        
+        access_log /var/log/nginx/access.log main;
+        
+        sendfile on;
+        keepalive_timeout 65;
+        
+        upstream mindsdb_backend {
+            server mindsdb-service:47334;
+        }
+        
+        server {
+            listen 80;
+            server_name _;
+            
+            location /api/ {
+                proxy_pass http://mindsdb_backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            location /health {
+                proxy_pass http://mindsdb_backend/api/status;
+                access_log off;
+            }
+            
+            location / {
+                return 200 'MindsDB Crypto Platform is running';
+                add_header Content-Type text/plain;
+            }
+        }
+    }

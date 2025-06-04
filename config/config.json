@@ -1,0 +1,70 @@
+
+{
+  "version": "23.12.4.2",
+  "config_version": "1.4",
+  "storage_dir": "/opt/mindsdb",
+  "log": {
+    "level": {
+      "console": "INFO",
+      "file": "DEBUG"
+    },
+    "file": "/opt/mindsdb/logs/mindsdb.log",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "debug": false,
+  "integrations": {},
+  "api": {
+    "http": {
+      "host": "0.0.0.0",
+      "port": "47334"
+    },
+    "mysql": {
+      "host": "0.0.0.0",
+      "port": "47335",
+      "database": "mindsdb",
+      "ssl": true
+    },
+    "mongodb": {
+      "host": "0.0.0.0",
+      "port": "47336",
+      "database": "mindsdb"
+    },
+    "mcp": {
+      "host": "0.0.0.0",
+      "port": "47337",
+      "access_token": "${MINDSDB_MCP_ACCESS_TOKEN}"
+    }
+  },
+  "cache": {
+    "type": "redis",
+    "params": {
+      "host": "${REDIS_HOST}",
+      "port": "${REDIS_PORT}",
+      "password": "${REDIS_PASSWORD}",
+      "db": 0
+    }
+  },
+  "permanent_storage": {
+    "type": "postgresql",
+    "params": {
+      "host": "${POSTGRES_HOST}",
+      "port": "${POSTGRES_PORT}",
+      "database": "${POSTGRES_DB}",
+      "user": "${POSTGRES_USER}",
+      "password": "${POSTGRES_PASSWORD}"
+    }
+  },
+  "auth": {
+    "username": "admin",
+    "password": "${MINDSDB_PASSWORD}",
+    "secret": "${MINDSDB_SECRET}"
+  },
+  "tasks": {
+    "disable": false,
+    "backup": {
+      "enabled": true,
+      "schedule": "0 2 * * *",
+      "keep_days": 7
+    }
+  }
+}
