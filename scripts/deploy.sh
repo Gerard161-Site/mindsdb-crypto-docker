@@ -80,11 +80,11 @@ MCP_ACCESS_TOKEN=$(openssl rand -base64 32)
 # API Keys (Replace with your actual keys)
 COINMARKETCAP_API_KEY=your_coinmarketcap_api_key
 DEFILLAMA_API_KEY=your_defillama_api_key
-COINGECKO_API_KEY=your_coingecko_api_key
+COINGECKO_API_KEY=CG-sQrt6SLwTPRsX9mppnfMwYUA
 BINANCE_API_KEY=your_binance_api_key
 BINANCE_SECRET_KEY=your_binance_secret_key
-ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
-OPENAI_API_KEY=your_openai_api_key
+ALPHA_VANTAGE_API_KEY=G5O1K7KL5C5DP8T7
+OPENAI_API_KEY=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
 
 # Monitoring
 GRAFANA_PASSWORD=$(openssl rand -base64 32)
@@ -216,10 +216,10 @@ deploy_services() {
     print_status "Building and starting services..."
     
     # Build custom MindsDB image
-    docker-compose build --no-cache
+    docker compose build --no-cache
     
     # Start services
-    docker-compose up -d
+    docker compose up -d
     
     print_status "Services started successfully"
 }
