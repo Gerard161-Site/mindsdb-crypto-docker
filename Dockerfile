@@ -1,65 +1,57 @@
-
-# MindsDB Custom Crypto Handlers Dockerfile
+# XplainCrypto Platform - Multi-Handler MindsDB Dockerfile
 FROM mindsdb/mindsdb:latest
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV MINDSDB_STORAGE_PATH=/opt/mindsdb
-ENV MINDSDB_CONFIG_PATH=/opt/mindsdb/config.json
+# Set metadata
+LABEL maintainer="XplainCrypto Platform"
+LABEL description="MindsDB with custom crypto handlers for comprehensive market analysis"
+LABEL version="1.0"
 
 # Install system dependencies
 USER root
 RUN apt-get update && apt-get install -y \
+    git \
     curl \
     wget \
-    git \
     build-essential \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create directories
-RUN mkdir -p /opt/mindsdb/handlers /opt/mindsdb/agents /opt/mindsdb/config
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV MINDSDB_STORAGE_PATH=/mindsdb
+ENV PYTHONPATH="${PYTHONPATH}:/mindsdb"
 
-# Copy custom handlers and requirements
-COPY handlers/ /opt/mindsdb/handlers/
-COPY requirements-crypto.txt /opt/mindsdb/
+# Create necessary directories
+RUN mkdir -p /mindsdb/mindsdb/integrations/handlers
 
-# Install crypto-specific dependencies
-RUN pip install --no-cache-dir -r /opt/mindsdb/requirements-crypto.txt
+# Copy handler installation script
+COPY scripts/install-handlers.sh /tmp/install-handlers.sh
+RUN chmod +x /tmp/install-handlers.sh
 
-# Install additional crypto handlers
-RUN pip install --no-cache-dir \
-    requests \
-    websocket-client \
-    ccxt \
-    web3 \
-    pycoingecko \
-    python-binance \
-    alpha-vantage \
-    yfinance \
-    pandas-ta \
-    ta-lib \
-    numpy \
-    scipy \
-    scikit-learn \
-    plotly \
-    dash \
-    streamlit
+# Copy the mindsdb-handlers directory (this will be available during build)
+COPY ../mindsdb-handlers /tmp/mindsdb-handlers
+
+# Install all handlers
+RUN cd /tmp && \
+    HANDLERS_BASE_PATH="/tmp/mindsdb-handlers" /tmp/install-handlers.sh
 
 # Copy configuration files
-COPY config/ /opt/mindsdb/config/
-COPY agents/ /opt/mindsdb/agents/
+COPY config/ /mindsdb/config/
 
-# Set permissions
-RUN chown -R mindsdb:mindsdb /opt/mindsdb
-USER mindsdb
+# Create default MindsDB config if not exists
+RUN if [ ! -f /mindsdb/config.json ]; then \
+    echo '{"config_version": "1.4", "api": {"http": {"host": "0.0.0.0", "port": "47334"}}}' > /mindsdb/config.json; \
+    fi
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:47334/api/status || exit 1
 
 # Expose ports
 EXPOSE 47334 47335 47336 47337
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:47334/api/status || exit 1
+# Set working directory
+WORKDIR /mindsdb
 
-# Start MindsDB with all APIs enabled
-CMD ["python", "-m", "mindsdb", "--api=http,mysql,mongodb,mcp", "--config=/opt/mindsdb/config/config.json"]
+# Start MindsDB
+CMD ["python", "-m", "mindsdb", "--config=/mindsdb/config.json", "--api=http,mysql,mongodb"]
