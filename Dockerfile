@@ -21,19 +21,27 @@ ENV PYTHONUNBUFFERED=1
 ENV MINDSDB_STORAGE_PATH=/mindsdb
 ENV PYTHONPATH="${PYTHONPATH}:/mindsdb"
 
+# Install additional Python packages for crypto handlers
+RUN pip install --no-cache-dir \
+    requests \
+    pandas \
+    numpy \
+    python-dotenv \
+    websocket-client \
+    ccxt \
+    web3 \
+    pycoingecko
+
+# Install crypto-specific handlers that are available
+# Note: Most crypto APIs work through HTTP requests, not separate handlers
+RUN pip install --no-cache-dir \
+    coinmarketcapapi \
+    dune-client \
+    defillama \
+    blockchain
+
 # Create necessary directories
 RUN mkdir -p /mindsdb/mindsdb/integrations/handlers
-
-# Copy handler installation script
-COPY scripts/install-handlers.sh /tmp/install-handlers.sh
-RUN chmod +x /tmp/install-handlers.sh
-
-# Copy the mindsdb-handlers directory (this will be available during build)
-COPY ../mindsdb-handlers /tmp/mindsdb-handlers
-
-# Install all handlers
-RUN cd /tmp && \
-    HANDLERS_BASE_PATH="/tmp/mindsdb-handlers" /tmp/install-handlers.sh
 
 # Copy configuration files
 COPY config/ /mindsdb/config/

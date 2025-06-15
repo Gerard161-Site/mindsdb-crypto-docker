@@ -48,7 +48,7 @@ services:
       - JUPYTER_ENABLE_LAB=yes
       - JUPYTER_TOKEN=crypto-dev-token
     networks:
-      - mindsdb_network
+      - xplaincrypto_network
 
   # pgAdmin for database management
   pgadmin:
@@ -61,7 +61,7 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
-      - mindsdb_network
+      - xplaincrypto_network
 
   # Redis Commander for Redis management
   redis-commander:
@@ -71,7 +71,7 @@ services:
     environment:
       - REDIS_HOSTS=local:redis:6379
     networks:
-      - mindsdb_network
+      - xplaincrypto_network
 
 volumes:
   pgadmin_data:
