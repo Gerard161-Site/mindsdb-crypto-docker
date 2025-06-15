@@ -78,13 +78,13 @@ MINDSDB_SECRET=$(openssl rand -base64 32)
 MCP_ACCESS_TOKEN=$(openssl rand -base64 32)
 
 # API Keys (Replace with your actual keys)
-COINMARKETCAP_API_KEY=your_coinmarketcap_api_key
-DEFILLAMA_API_KEY=your_defillama_api_key
-COINGECKO_API_KEY=your_coingecko_api_key
-BINANCE_API_KEY=your_binance_api_key
-BINANCE_SECRET_KEY=your_binance_secret_key
-ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
-OPENAI_API_KEY=your_openai_api_key
+COINMARKETCAP_API_KEY=\${COINMARKETCAP_API_KEY}
+DEFILLAMA_API_KEY=\${DEFILLAMA_API_KEY}
+COINGECKO_API_KEY=\${COINGECKO_API_KEY}
+BINANCE_API_KEY=\${BINANCE_API_KEY}
+BINANCE_SECRET_KEY=\${BINANCE_SECRET_KEY}
+ALPHA_VANTAGE_API_KEY=\${ALPHA_VANTAGE_API_KEY}
+OPENAI_API_KEY=\${OPENAI_API_KEY}
 
 # Monitoring
 GRAFANA_PASSWORD=$(openssl rand -base64 32)
