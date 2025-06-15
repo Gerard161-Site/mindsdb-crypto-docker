@@ -19,7 +19,7 @@ HANDLERS=(
 HANDLERS_BASE_PATH="../mindsdb-handlers"
 
 # MindsDB handlers installation directory
-MINDSDB_HANDLERS_DIR="/mindsdb/mindsdb/integrations/handlers"
+MINDSDB_HANDLERS_DIR="/opt/mindsdb/mindsdb/integrations/handlers"
 
 # Create handlers directory if it doesn't exist
 mkdir -p "$MINDSDB_HANDLERS_DIR"
